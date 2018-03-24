@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--suppress AndroidDomInspection -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.eason.smstransmit.SmsTransmitActivity">
+
+    <TextView
+        android:id="@+id/senderNumberText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="36dp"
+        android:layout_marginTop="29dp"
+        android:text="发送者号码"
+        android:textSize="20dp" />
+
+    <EditText
+        android:id="@+id/senderNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/senderNumberText"
+        android:layout_below="@+id/senderNumberText"
+        android:layout_marginTop="15dp"
+        android:ems="10"
+        android:inputType="phone"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/senderContentText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/senderNumber"
+        android:layout_below="@+id/senderNumber"
+        android:layout_marginTop="15dp"
+        android:text="内容包含"
+        android:textSize="20dp" />
+
+    <EditText
+        android:id="@+id/senderContent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/senderContentText"
+        android:layout_below="@+id/senderContentText"
+        android:layout_marginTop="15dp"
+        android:ems="10"
+        android:inputType="text"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/receiverNumberText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/senderContent"
+        android:layout_below="@+id/senderContent"
+        android:layout_marginTop="15dp"
+        android:text="接收者号码"
+        android:textSize="20dp" />
+
+    <EditText
+        android:id="@+id/receiverNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/receiverNumberText"
+        android:layout_below="@+id/receiverNumberText"
+        android:layout_marginTop="15dp"
+        android:ems="10"
+        android:inputType="phone"
+        android:text="" />
+
+    <Button
+        android:id="@+id/statusButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/receiverNumber"
+        android:layout_below="@+id/receiverNumber"
+        android:layout_marginTop="15dp"
+        android:text="" />
+
+</RelativeLayout>
