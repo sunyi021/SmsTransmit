@@ -1,9 +1,16 @@
 package com.eason.smstransmit;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -17,16 +24,32 @@ import java.util.Date;
 
 public class SmsTransmitService extends Service {
     private static final String TAG = "SmsTransmitService";
+
+    private static String NOTIFICATION_CHANNEL_ID = "8551";
+    private static String NOTIFICATION_CHANNEL_NAME = "8551";
+
     private SmsTransmitReceiver smsTransmitReceiver;
 
     private String receiverNumber;
     private String senderNumber;
-    private String senderContent;
+    private String[] senderContents;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
         Log.d(TAG, "onCreate executed.");
         super.onCreate();
+
+
+        Intent newIntent = new Intent(this, SmsTransmitActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, newIntent, 0);
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setContentText("给宝宝发消息");
+        builder.setContentTitle("啦啦啦");
+        builder.setChannelId(NOTIFICATION_CHANNEL_ID);
+        Notification notification = builder.build();
+        createNotificationChannel();
+        startForeground(8551, notification);
     }
 
     @Override
@@ -37,8 +60,9 @@ public class SmsTransmitService extends Service {
         }
 
         senderNumber = intent.getStringExtra(SmsTransmitActivity.SENDER_NUMBER);
-        senderContent = intent.getStringExtra(SmsTransmitActivity.SENDER_CONTENT);
         receiverNumber = intent.getStringExtra(SmsTransmitActivity.RECEIVER_NUMBER);
+        String tempSenderContent = intent.getStringExtra(SmsTransmitActivity.SENDER_CONTENT);
+        senderContents = tempSenderContent.split(";");
 
         smsTransmitReceiver = new SmsTransmitReceiver(new SmsTransmitCallback( ) {
             @Override
@@ -50,7 +74,7 @@ public class SmsTransmitService extends Service {
                 String message = msg.getDisplayMessageBody();
                 Log.d(TAG, "onSms：from " + number + ", content：" + message + ", time：" + receiveTime);
 
-                if (number.equals(senderNumber) && message.contains(senderContent)) {
+                if (matchCondition(msg)) {
                     transmitMessageTo(receiverNumber, message);
                 }
             }
@@ -59,6 +83,7 @@ public class SmsTransmitService extends Service {
         registerReceiver(smsTransmitReceiver, iff);
 
         Log.d(TAG, "started service: " + smsTransmitReceiver + ", from " + senderNumber + " to " + receiverNumber);
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -80,5 +105,23 @@ public class SmsTransmitService extends Service {
         Log.d(TAG, "transmitMessageTo: " + phoneNumber + ", with: " + message);
         SmsManager manager = SmsManager.getDefault();
         manager.sendTextMessage(phoneNumber, null, message, null, null);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void createNotificationChannel() {
+        NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+        NotificationManager manager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.createNotificationChannel(channel);
+    }
+
+    private boolean matchCondition(SmsMessage msg){
+        String message = msg.getDisplayMessageBody();
+        for (String content : senderContents) {
+            if (!message.contains(content)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

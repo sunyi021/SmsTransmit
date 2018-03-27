@@ -43,8 +43,8 @@ public class SmsTransmitActivity extends Activity {
 
     private final static String[] PERMISSIONS = new String[] {
             Manifest.permission.SEND_SMS,
-            Manifest.permission.BROADCAST_SMS,
-            Manifest.permission.RECEIVE_SMS
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_PHONE_STATE
     };
 
     @Override
@@ -54,7 +54,7 @@ public class SmsTransmitActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         // check permission
-        if (checkActivityPermission()) {
+        if (!checkActivityPermission()) {
             requestPermissions();
         }
 
@@ -68,17 +68,17 @@ public class SmsTransmitActivity extends Activity {
             public void run() {
                 while (true) {
                     try {
+                        Thread.sleep(1000);
                         boolean temp = isServiceRunning(context, SmsTransmitService.class.getName());
                         if (isRunning != temp) {
                             isRunning = temp;
                             ((SmsTransmitActivity) context).runOnUiThread(new Runnable( ) {
                                 @Override
                                 public void run() {
-                                    updateStatus();
+                                    updateStatus(context);
                                 }
                             });
                         }
-                        Thread.sleep(1000);
                     } catch (Exception e) {
                     }
 
@@ -100,20 +100,39 @@ public class SmsTransmitActivity extends Activity {
                     startSmsTransmitService(context);
                     isRunning = true;
                 }
-                updateStatus();
+                updateStatus(context);
             }
         });
 
         // run
 //        checkServiceThread.start();
-        isRunning = isServiceRunning(context, SmsTransmitService.class.getName());
-        updateStatus();
+        updateStatus(context);
     }
 
-    public void updateStatus() {
-        senderNumber.setText(getSetting(this, SENDER_NUMBER));
-        senderContent.setText(getSetting(this, SENDER_CONTENT));
-        receiverNumber.setText(getSetting(this, RECEIVER_NUMBER));
+    @Override
+    protected void onPause() {
+        super.onPause();
+        setSetting(this, SENDER_NUMBER, senderNumber.getText( ).toString( ));
+        setSetting(this, SENDER_CONTENT, senderContent.getText( ).toString( ));
+        setSetting(this, RECEIVER_NUMBER, receiverNumber.getText( ).toString( ));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        boolean temp = isServiceRunning(this, SmsTransmitService.class.getName());
+        isRunning = temp;
+        updateStatus(this);
+    }
+
+    public void updateStatus(Context context) {
+        String sender = getSetting(context, SENDER_NUMBER);
+        String content = getSetting(context, SENDER_CONTENT);
+        String receiver = getSetting(context, RECEIVER_NUMBER);
+        Log.d(TAG, "isRunning: " + isRunning + ", sender: " + sender + ", content: " + content + ", receiver: " + receiver);
+        senderNumber.setText(sender);
+        senderContent.setText(content);
+        receiverNumber.setText(receiver);
 
         if (isRunning) {
             senderNumber.setEnabled(false);
