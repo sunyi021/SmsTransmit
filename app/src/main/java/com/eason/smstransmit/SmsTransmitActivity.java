@@ -38,6 +38,7 @@ public class SmsTransmitActivity extends Activity {
     public final static String SENDER_NUMBER = "sender_number";
     public final static String RECEIVER_NUMBER = "receiver_number";
     public final static String SENDER_CONTENT = "sender_content";
+    public final static String SERVICE_RUNNING = "service_running";
 
     private final static int REQUEST_CODE = 1;
 
@@ -60,7 +61,7 @@ public class SmsTransmitActivity extends Activity {
 
         // init members
         senderNumber = (EditText) findViewById(R.id.senderNumber);
-        senderContent = (EditText) findViewById(R.id.senderContent);
+        senderContent = (EditText) findViewById(R.id.contentContent);
         receiverNumber = (EditText) findViewById(R.id.receiverNumber);
         statusButton = (Button) findViewById(R.id.statusButton);
         checkServiceThread = new Thread(new Runnable() {
@@ -153,11 +154,14 @@ public class SmsTransmitActivity extends Activity {
         intent.putExtra(SENDER_CONTENT, getSetting(context, SENDER_CONTENT));
         intent.putExtra(RECEIVER_NUMBER, getSetting(context, RECEIVER_NUMBER));
         super.startService(intent);
+
+        setSetting(this, SERVICE_RUNNING, "true");
     }
 
     public void stopSmsTransmitService(Context context) {
         Intent intent = new Intent(context, SmsTransmitService.class);
         super.stopService(intent);
+        setSetting(this, SERVICE_RUNNING, "false");
     }
 
     public boolean isServiceRunning(Context context, String serviceName) {
@@ -193,13 +197,13 @@ public class SmsTransmitActivity extends Activity {
     }
 
     public static void setSetting (Context context, String key, String value){
-        SharedPreferences.Editor note = context.getSharedPreferences(SMS_TRANSMIT, Activity.MODE_PRIVATE).edit();
+        SharedPreferences.Editor note = context.getSharedPreferences(SMS_TRANSMIT, Activity.MODE_MULTI_PROCESS).edit();
         note.putString(key, value);
         note.commit();
     }
 
     public static String getSetting (Context context, String key){
-        SharedPreferences read = context.getSharedPreferences(SMS_TRANSMIT, Activity.MODE_PRIVATE);
+        SharedPreferences read = context.getSharedPreferences(SMS_TRANSMIT, Activity.MODE_MULTI_PROCESS);
         return read.getString(key, "");
     }
 

@@ -14,9 +14,12 @@ import android.support.annotation.RequiresApi;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
+import android.widget.RemoteViews;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by eason.sun on 2018/3/24.
@@ -32,26 +35,16 @@ public class SmsTransmitService extends Service {
 
     private String receiverNumber;
     private String senderNumber;
-    private String[] senderContents;
+    private List<String[]> senderContentList = new ArrayList<String[]>();
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
         Log.d(TAG, "onCreate executed.");
         super.onCreate();
-
-
-        Intent newIntent = new Intent(this, SmsTransmitActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(this, 0, newIntent, 0);
-        Notification.Builder builder = new Notification.Builder(this);
-        builder.setContentText("给宝宝发消息");
-        builder.setContentTitle("啦啦啦");
-        builder.setChannelId(NOTIFICATION_CHANNEL_ID);
-        Notification notification = builder.build();
-        createNotificationChannel();
-        startForeground(8551, notification);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand executed.");
@@ -62,7 +55,10 @@ public class SmsTransmitService extends Service {
         senderNumber = intent.getStringExtra(SmsTransmitActivity.SENDER_NUMBER);
         receiverNumber = intent.getStringExtra(SmsTransmitActivity.RECEIVER_NUMBER);
         String tempSenderContent = intent.getStringExtra(SmsTransmitActivity.SENDER_CONTENT);
-        senderContents = tempSenderContent.split(";");
+        String[] tempCotents = tempSenderContent.split(";");
+        for (String content : tempCotents) {
+            senderContentList.add(content.split(","));
+        }
 
         smsTransmitReceiver = new SmsTransmitReceiver(new SmsTransmitCallback( ) {
             @Override
@@ -84,6 +80,15 @@ public class SmsTransmitService extends Service {
 
         Log.d(TAG, "started service: " + smsTransmitReceiver + ", from " + senderNumber + " to " + receiverNumber);
 
+        Intent newIntent = new Intent(this, SmsTransmitActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, newIntent, 0);
+        Notification.Builder builder = new Notification.Builder(this);
+        builder.setChannelId(NOTIFICATION_CHANNEL_ID);
+
+        Notification notification = builder.build();
+        createNotificationChannel();
+        startForeground(8551, notification);
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -91,6 +96,7 @@ public class SmsTransmitService extends Service {
     public void onDestroy(){
         Log.d(TAG, "onDestroy executed.");
         unregisterReceiver(smsTransmitReceiver);
+        stopForeground(true);
         smsTransmitReceiver = null;
         super.onDestroy();
     }
@@ -116,12 +122,20 @@ public class SmsTransmitService extends Service {
 
     private boolean matchCondition(SmsMessage msg){
         String message = msg.getDisplayMessageBody();
-        for (String content : senderContents) {
-            if (!message.contains(content)) {
-                return false;
+        for (String[] contents : senderContentList) {
+            boolean result = true;
+            for (String content : contents) {
+                if (!message.contains(content)) {
+                    result = false;
+                    break;
+                }
+            }
+
+            if (result) {
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 }
