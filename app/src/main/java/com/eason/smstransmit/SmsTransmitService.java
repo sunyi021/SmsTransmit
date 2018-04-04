@@ -1,5 +1,6 @@
 package com.eason.smstransmit;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +9,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.RequiresApi;
@@ -28,7 +30,7 @@ import java.util.List;
 public class SmsTransmitService extends Service {
     private static final String TAG = "SmsTransmitService";
 
-    private static String NOTIFICATION_CHANNEL_ID = "8551";
+    private static int NOTIFICATION_CHANNEL_ID = 8551;
     private static String NOTIFICATION_CHANNEL_NAME = "8551";
 
     private SmsTransmitReceiver smsTransmitReceiver;
@@ -37,14 +39,18 @@ public class SmsTransmitService extends Service {
     private String senderNumber;
     private List<String[]> senderContentList = new ArrayList<String[]>();
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
         Log.d(TAG, "onCreate executed.");
         super.onCreate();
+
+        String isRunning = SmsTransmitActivity.getSetting(this, SmsTransmitActivity.SERVICE_RUNNING);
+        if (Boolean.getBoolean(isRunning)) {
+            Intent intent = new Intent(this, SmsTransmitService.class);
+            startService(intent);
+        }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand executed.");
@@ -52,9 +58,9 @@ public class SmsTransmitService extends Service {
             return super.onStartCommand(intent, flags, startId);
         }
 
-        senderNumber = intent.getStringExtra(SmsTransmitActivity.SENDER_NUMBER);
-        receiverNumber = intent.getStringExtra(SmsTransmitActivity.RECEIVER_NUMBER);
-        String tempSenderContent = intent.getStringExtra(SmsTransmitActivity.SENDER_CONTENT);
+        senderNumber = SmsTransmitActivity.getSetting(this, SmsTransmitActivity.SENDER_NUMBER);
+        receiverNumber = SmsTransmitActivity.getSetting(this, SmsTransmitActivity.RECEIVER_NUMBER);
+        String tempSenderContent = SmsTransmitActivity.getSetting(this, SmsTransmitActivity.SENDER_CONTENT);
         String[] tempCotents = tempSenderContent.split(";");
         for (String content : tempCotents) {
             senderContentList.add(content.split(","));
@@ -80,16 +86,19 @@ public class SmsTransmitService extends Service {
 
         Log.d(TAG, "started service: " + smsTransmitReceiver + ", from " + senderNumber + " to " + receiverNumber);
 
+        startForeground();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void startForeground() {
         Intent newIntent = new Intent(this, SmsTransmitActivity.class);
         PendingIntent pi = PendingIntent.getActivity(this, 0, newIntent, 0);
         Notification.Builder builder = new Notification.Builder(this);
-        builder.setChannelId(NOTIFICATION_CHANNEL_ID);
+        builder.setChannelId(String.valueOf(NOTIFICATION_CHANNEL_ID));
 
         Notification notification = builder.build();
         createNotificationChannel();
-        startForeground(8551, notification);
-
-        return super.onStartCommand(intent, flags, startId);
+        startForeground(NOTIFICATION_CHANNEL_ID, notification);
     }
 
     @Override
@@ -113,9 +122,8 @@ public class SmsTransmitService extends Service {
         manager.sendTextMessage(phoneNumber, null, message, null, null);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void createNotificationChannel() {
-        NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel channel = new NotificationChannel(String.valueOf(NOTIFICATION_CHANNEL_ID), NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
         NotificationManager manager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         manager.createNotificationChannel(channel);
     }

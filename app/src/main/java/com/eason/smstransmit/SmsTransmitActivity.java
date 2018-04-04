@@ -34,7 +34,7 @@ public class SmsTransmitActivity extends Activity {
 
     private boolean isRunning = false;
 
-    private final static String SMS_TRANSMIT = "sms_transmit";
+    public final static String SMS_TRANSMIT = "sms_transmit";
     public final static String SENDER_NUMBER = "sender_number";
     public final static String RECEIVER_NUMBER = "receiver_number";
     public final static String SENDER_CONTENT = "sender_content";
